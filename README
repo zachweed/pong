@@ -1,0 +1,77 @@
+PONG
+======
+
+An implementation of pong, that allows playing with a paddle and ball
+
+SYNOPSIS
+--------
+
+Upon entering pong, the player can use:
+
+  - ',' to move a paddle left, &
+  - '.' and move the paddle right
+
+The intention is the player moves the paddle so that the ball that is served from the center can bounce from the paddle.
+
+If the ball exceeds the boundaries of the paddle and goes off of the screen, then the amount of balls remaining is decremented.
+
+Instead, of the player hits the ball with the paddle, then their score is incremented.
+
+Additionally, if the player attempts to resize their screen, then TILT is shown (somewhere in the screen) and the window exited upon key press.
+
+It could be worth noting that the speed of the ball increases over time, and the direction the ball is served from is "randomly" chosen.
+
+EXAMPLE
+_______
+
+   ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+   │                                                                                                                                     │
+   │   BALLS LEFT: 3                                               SCORE: 0                                             ELAPSED: 00:04   │
+   │  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                            O                                                                  │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                                                                                               │  │
+   │  │                                                       ================                                                        │  │
+   └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+    press q to exit
+
+
+
+DESCRIPTION
+-----------
+
+A ball is served from center of board, in general directly of a paddle (which is moves with ',' [for left], and '.' [for right]). As the ball interacts with the paddle, it bounces from the paddle in some upward direction. If the ball is going towards the paddle and misses, then it is re-served from the center, and the score is impacted. If the ball interacts with the boundaries of the inner court (top, left, or right boundaries), then the ball bounces from those boundaries in the general direction of the paddle.
+
+
+COMPILING
+---------
+
+  make
+
+
+STATUS CODES
+------------
+
+  0 Success
+
+  1 Error Status

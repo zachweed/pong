@@ -1,0 +1,216 @@
+Design Document for Pong
+-----------------------------------------------------------
+Code by: Zachary Weed
+History: -
+-----------------------------------------------------------
+
+Purpose:
+
+The purpose of pong is providing a player with a way of interacting with a ball, with a paddle, as the ball interacts with walls of a court. Essentially, the player moves the paddle left and right, in an attempt at interacting with a ball, which sends the ball away and towards a wall, where it can bounce back to the paddle. In the event that they player does not interact with the ball from their paddle before the ball reaches a bottom boundary, then the player is provided with an adjustment in balls remaining. Additionally, on each interaction with the ball, the score increases. In the event that the balls remaining is at least 0, then the board shows "COMPLETED", and exists. Also, if the player attempts to resize the board, the board shows "TILT", and exits after a keypress from the user. Overall, the purpose is providing the user with a way of playing pong from their terminal.
+
+Outline:
+
+Layering:
+
+  From main, we have multiple functions that make use of ncurses as a means of building a window, a court in the window, a paddle, a ball, a time elapsed section, etc. Each of these "objects" are represented in their own files. So we have:
+
+    - board.c/h,
+      - provides:
+        - #initialize_board(),
+        - #update_started_at(),
+        - #draw_left_right_borders(),
+        - #draw_court(),
+        - #draw_score(),
+        - #draw_time_elapsed(),
+        - #build_window(),
+        - #draw_balls_left(),
+        - #build_box(), &
+        - #draw_board()
+    - ball.c/h,
+      - providing:
+        - #serve_ball(), &
+        - #move_ball()
+    - court.c/h,
+      - providing:
+        - #initialize_court()
+    - paddle.c/h, &
+      - provides:
+        - #create_paddle(),
+        - #paddle_free(),
+        - #erase_paddle(),
+        - #draw_paddle(),
+        - #move_paddle_left(),
+        - #move_paddle_right()
+    - timer.c/h
+      - which provides:
+        - #handle_timer(), &
+        - #clear_timer()
+
+  Essentially, each file encapsulates logic specific to what it defines, with the main pong.c file handling overarching aspects of the logic
+
+  Each of these files are also listed below in the File Structure section.
+
+  The main function is reponsible for doing things like:
+
+    - setting a timer to raise a SIGALRM on an interval,
+    - defining event handlers that increment a ticker when the alarm is raised,
+    - drawing the "board" and "court", with calls to functions in ncurses (primarily of the mvprintw variety)
+    - making adjustments to the speed of the ball struct, as pong has gone on for so many seconds,
+    - drawing the SCORE and TIME ELAPSED atop the aforementioned board,
+    - captuing key presses from the user to move the paddle left ",", and right ".",
+    - clean up, through clearing screens, timers, and allocated memory (like that for paddle),
+    - making calls to #move_ball(), in response to the amount of "ticks" that have occured,
+      - naturally, the ball moves independent of the paddle and walls, while also and in response to aforementioned
+      - having said that, the logic responsible for how these move is encapsulated in the ball.c file
+
+  As an example of how some of these functions are called from main, here is a sequence of some of those functions from main:
+
+  ________________________________________________________________________________________________
+  |                                                                                              |
+  |  $ pong---->------|                                                                          |
+  |                   |          ----------                                                      |
+  |                   |----->----|        |                                                      |
+  |                              |  main  |                                                      |
+  |                   ___________|________|___________________________                           |
+  |             ______|_______________   ____|________________   ___|__________________          |
+  |            |                     |  |                    |  |                    |           |
+  |            | initialize_screen() |  | initialize_board() |  |    draw_board()    |           |
+  |            |_____________________|  |____________________|  |____________________|           |
+  |            ______|_______________   ____|_________________  __|___________________           |
+  |            |                     |  |                    |  |                    |           |
+  |            |     draw_court()    |  | draw_paddle()      |  |    serve_ball()    |           |
+  |            |_____________________|  |____________________|  |____________________|           |
+  |            ______|_______________   ____|_________________   _|___________________           |
+  |            |                     |  |                    |  |                    |           |
+  |            |     clear_timer()   |  | paddle_free()      |  | clear_terminal()   |           |
+  |            |_____________________|  |____________________|  |____________________|           |
+  |            ______|_______________   ____|_________________  __|___________________           |
+  |            |                     |  |                    |  |                    |           |
+  |            |     draw_score()    |  |   move_ball()      |  | move_paddle_left() |           |
+  |            |_____________________|  |____________________|  |____________________|           |
+  |            ______|_______________   ____|_________________  __|____________________          |
+  |            |                     |  |                    |  |                     |          |
+  |            |  initialize_ball()  |  | initialize_setup() |  | move_paddle_right() |          |
+  |            |_____________________|  |____________________|  |_____________________|          |
+  |                                                                                              |
+  -------------------------------------------------------------------------------------------------
+
+Data Structures:
+________________________________________________________________________________________________________________________
+|                 __________________________________________________________________________________________           |
+|                 |                                                                                         |          |
+|                 |                                       struct Board                                      |          |
+|                 |_________________________________________________________________________________________|          |
+|                 |         width              |            balls_remaining                |   height       |          |
+|                 -------------------------------------------------------------------------|-----------------          |
+|                 |          int               |                 int                       |     int        |          |
+|                 |----------------------------|-------------------------------------------|-----------------          |
+|                 |       total width          |               in play                     | of board       |          |
+|                 ------------------------------------------------------------------------------------------|          |
+|                 |________________________________________________________________________|________________|          |
+|                 |         score              |         last_speed_increase_at            |  started_at    |          |
+|                 -------------------------------------------------------------------------|-----------------          |
+|                 |          int               |                time_t                     |struct timespec |          |
+|                 |----------------------------|-------------------------------------------|-----------------          |
+|                 |      total score           |    when speed last increase on ball       |  of pong       |          |
+|                 |____________________________|___________________________________________|________________|          |
+|                 |________________________________________________________________________|________________|          |
+|                 |         in_progress        |                  -                        |       -        |          |
+|                 -------------------------------------------------------------------------|-----------------          |
+|                 |            int             |                  -                        |       -        |          |
+|                 |----------------------------|-------------------------------------------|-----------------          |
+|                 |        if in progress      |                  -                        |       -        |          |
+|                 |____________________________|___________________________________________|________________|          |
+|                 __________________________________________________________________________________________           |
+|                 |                                                                                         |          |
+|                 |                                       struct Ball                                       |          |
+|                 |_________________________________________________________________________________________|          |
+|                 |           dx               |                  dy                       |      x         |          |
+|                 -------------------------------------------------------------------------|-----------------          |
+|                 |           int              |                  int                      |     int        |          |
+|                 |----------------------------|-------------------------------------------|-----------------          |
+|                 |       x direction          |               y direction                 |   x coord      |          |
+|                 ------------------------------------------------------------------------------------------|          |
+|                 |________________________________________________________________________|________________|          |
+|                 |            y               |                x_elapsed                  |    x_delay     |          |
+|                 -------------------------------------------------------------------------|-----------------          |
+|                 |           int              |                  int                      |      int       |          |
+|                 |----------------------------|-------------------------------------------|-----------------          |
+|                 |       total score          |              since x moved                |  before x move |          |
+|                 |____________________________|___________________________________________|________________|          |
+|                 |________________________________________________________________________|________________|          |
+|                 |          y_elapsed         |                y_delay                    |       -        |          |
+|                 -------------------------------------------------------------------------|-----------------          |
+|                 |            int             |                  int                      |       -        |          |
+|                 |----------------------------|-------------------------------------------|-----------------          |
+|                 |        since y moved       |              before y move                |       -        |          |
+|                 |____________________________|___________________________________________|________________|          |
+|                 __________________________________________________________________________________________           |
+|                 |                                                                                         |          |
+|                 |                                       struct Court                                      |          |
+|                 |_________________________________________________________________________________________|          |
+|                 |       top_boundary         |             right_boundary                | left_boundary  |          |
+|                 -------------------------------------------------------------------------|-----------------          |
+|                 |           int              |                  int                      |     int        |          |
+|                 |----------------------------|-------------------------------------------|-----------------          |
+|                 |       units of boundary    |               boundary_units              | aforementioned |          |
+|                 ------------------------------------------------------------------------------------------|          |
+|                 |________________________________________________________________________|________________|          |
+|                 |       bottom_boundary      |                  -                        |      -         |          |
+|                 -------------------------------------------------------------------------|-----------------          |
+|                 |           int              |                  -                        |      -         |          |
+|                 |----------------------------|-------------------------------------------|-----------------          |
+|                 |          units             |                  -                        |      -         |          |
+|                 |____________________________|___________________________________________|________________|          |
+|                 __________________________________________________________________________________________           |
+|                 |                                                                                         |          |
+|                 |                                       struct Paddle                                     |          |
+|                 |_________________________________________________________________________________________|          |
+|                 |         left_x             |                right_x                    |      y         |          |
+|                 -------------------------------------------------------------------------|-----------------          |
+|                 |           int              |                  int                      |     int        |          |
+|                 |----------------------------|-------------------------------------------|-----------------          |
+|                 |  left x position of paddle |         right x position of paddle        | vertical pos   |          |
+|                 |____________________________|___________________________________________|________________|          |
+|______________________________________________________________________________________________________________________|
+
+Headers:
+
+  - stdlib.h: for malloc and realloc
+  - string.h: providing access to string functions
+  - ncurses.h: access to curses
+  - signal.h: for handling signals
+  - sys/time.h: time processing
+
+System Calls:
+
+  - #setitimer()
+    - handling ball movement in response to SIGALRM
+  - #sigaction()
+    - provides signal handler
+  - #sigprocmask()
+    - so we can block and unblock signal processing
+
+
+File Structure:
+
+  - pong.c
+  - pong.h
+  - timer.c
+  - timer.h
+  - paddle.c
+  - paddle.h
+  - court.c
+  - court.h
+  - board.c
+  - board.h
+  - ball.c
+  - ball.h
+
+Special Topics:
+
+  - Time Elapsed: currently we grab the current time at the beginning of the game, storing the timestamp in a timespec struct in board, we then calculate the difference between now and that time,
+  - Ticker & Time Elapsed: currently the ticker is only used for ball movement, though we could perform a tick on 1second intervals, incrementing the ticker, and calculating the difference that way,
+  - Accuracy: this was one of the areas where it made sense to work with the timespec struct, as we are working with a modular example of a structure of time, not coupled to anything else,
+  - Efficiency: there are a very small amount (5 specifically) of system calls in the whole project, which are associated primarily with the ticker and ball movement.
+
