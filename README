@@ -1,9 +1,9 @@
-PONG
+pong
 ======
 
 An implementation of pong, that allows playing with a paddle and ball
 
-SYNOPSIS
+synopsis
 --------
 
 Upon entering pong, the player can use:
@@ -21,19 +21,18 @@ Additionally, if the player attempts to resize their screen, then TILT is shown 
 
 It could be worth noting that the speed of the ball increases over time, and the direction the ball is served from is "randomly" chosen.
 
-DESCRIPTION
+descriptiopn
 -----------
 
 A ball is served from center of board, in general directly of a paddle (which is moves with ',' [for left], and '.' [for right]). As the ball interacts with the paddle, it bounces from the paddle in some upward direction. If the ball is going towards the paddle and misses, then it is re-served from the center, and the score is impacted. If the ball interacts with the boundaries of the inner court (top, left, or right boundaries), then the ball bounces from those boundaries in the general direction of the paddle.
 
-
-COMPILING
+compiling
 ---------
 
   make
 
 
-STATUS CODES
+status codes
 ------------
 
   0 Success
